@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/samuelfneumann/goutils/matutils"
+
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -330,7 +332,7 @@ func (t *TileCoder) encodeBatchWithTiling(b *mat.Dense,
 	// iteration of coding and if a bias unit was used
 	// A vector of 1.0's will be needed for calculations later
 	rows, _ := b.Dims()
-	ones := VecOnes(rows)
+	ones := matutils.VecOnes(rows)
 	index.AddScaledVec(index, float64(indexOffset)+bias, ones)
 
 	return index

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/samuelfneumann/goutils/floatutils"
+	"github.com/samuelfneumann/goutils/matutils"
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/spatial/r1"
@@ -91,7 +93,7 @@ func (t *Tiling) Index(v mat.Vector) int {
 		tile := math.Floor((data - t.minDims.AtVec(i)) / t.binLengths[i])
 
 		// Clip tile to within Tiling bounds
-		tile = Clip(tile, 0.0, float64(t.bins[i]-1))
+		tile = floatutils.Clip(tile, 0.0, float64(t.bins[i]-1))
 
 		// Calculate the index into the tile-coded representation
 		// that should be 1.0 for this Tiling
@@ -122,7 +124,7 @@ func (t *Tiling) IndexBatch(b *mat.Dense) *mat.VecDense {
 	rows, _ := b.Dims()
 
 	// A vector of 1.0's will be needed for calculations later
-	ones := VecOnes(rows)
+	ones := matutils.VecOnes(rows)
 
 	data := mat.NewVecDense(rows, nil)
 
@@ -146,10 +148,10 @@ func (t *Tiling) IndexBatch(b *mat.Dense) *mat.VecDense {
 		// = ((data - min) / (max - min)) * binLength = IND
 		// int(IND) == index into Tiling along current dimension
 		data.AddScaledVec(data, -t.minDims.AtVec(i), ones)
-		VecFloor(data, t.binLengths[i])
+		matutils.VecFloor(data, t.binLengths[i])
 
 		// If out-of-bounds, use the last tile
-		VecClip(data, 0.0, float64(t.bins[i]-1))
+		matutils.VecClip(data, 0.0, float64(t.bins[i]-1))
 
 		// Calculate the index into the tile-coded representation
 		// that should be 1.0 for this Tiling
