@@ -13,9 +13,7 @@ import (
 	"gonum.org/v1/gonum/stat/samplemv"
 )
 
-// Controls tiling offsets. For each dimension, tilings are offset from
-// the origin by randomly sampling from a uniform distribution with
-// support [- tiling width/OffsetDiv, tiling width/OffsetDiv]
+// Default offset divisor. See NewTiling for more details.
 const OffsetDiv float64 = 1.5
 
 // Tiling is a grid of tiles over some space in ℝ^n
@@ -29,9 +27,18 @@ type Tiling struct {
 
 // NewTiling returns a new tiling from minDims to maxDims along each
 // dimension. The tiling will have bins[i] bins along dimension i,
-// and each dimension can have a different number of bins.
+// and each dimension can have a different number of bins. The
+// offset from the origin in each dimension of the tiling is controlled
+// by offsetDiv.
+//
+// For each dimension, tilings are offset from
+// the origin by randomly sampling from a uniform distribution with
+// support [-tiling width/OffsetDiv, tiling width/OffsetDiv]^k, where
+// k is the number of dimension of the tiling or state space. Each
+// dimension of the tiling may be offset from the origin by a different
+// amount.
 func NewTiling(minDims, maxDims mat.Vector, bins []int,
-	seed uint64) (*Tiling, error) {
+	seed uint64, offsetDiv float64) (*Tiling, error) {
 	// Error checking
 	if minDims.Len() != maxDims.Len() {
 		msg := fmt.Sprintf("newTiing: cannot specify minimum with fewer "+

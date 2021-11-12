@@ -31,12 +31,6 @@ import (
 // uses multiple tilings, each of which consist of the name number
 // of tiles per tiling.
 type TileCoder struct {
-	// numTilings int
-	// minDims     mat.Vector
-	// offsets     []*mat.Dense
-	// bins        [][]int
-	// binLengths  [][]float64
-	// seed        uint64
 	tilings     []*Tiling
 	includeBias bool
 
@@ -63,15 +57,25 @@ type TileCoder struct {
 // the minDims and maxDims parameters. That is, len(bins[i]) ==
 // minDims.Len() == maxDims.Len() for any i in [0, len(bins)-1].
 //
-//The parameter includeBias determines whether or not a
+// The parameter includeBias determines whether or not a
 // bias unit is kept as the first unit in the tile coded representation.
-func New(minDims, maxDims mat.Vector, bins [][]int,
-	seed uint64, includeBias bool) (*TileCoder, error) {
+//
+// offsetDiv controls the offset of each tiling from the origin. See
+// NewTiling for more details. If non-positive, then OffsetDiv is used.
+func New(minDims, maxDims mat.Vector, bins [][]int, seed uint64,
+	includeBias bool, offsetDiv float64) (*TileCoder, error) {
+	// Ensure offsetDiv is positive, if not use the default value
+	if offsetDiv <= 0 {
+		offsetDiv = OffsetDiv
+	}
+
+	// Create each tiling
 	numTilings := len(bins)
 	tilings := make([]*Tiling, numTilings)
 	var err error
 	for tiling := range bins {
-		tilings[tiling], err = NewTiling(minDims, maxDims, bins[tiling], seed)
+		tilings[tiling], err = NewTiling(minDims, maxDims, bins[tiling], seed,
+			offsetDiv)
 		if err != nil {
 			return nil, fmt.Errorf("new: could not create tiling %v: %v",
 				tiling, err)
@@ -171,7 +175,6 @@ func (t *TileCoder) EncodeIndices(v mat.Vector) []float64 {
 	for i := 0; i < t.NumTilings(); i++ {
 		go func(tiling int) {
 			t.indices <- t.encodeWithTiling(v, tiling)
-			// t.indices <- t.tilings[tiling].index(v)
 			t.wait.Done()
 		}(i)
 	}
@@ -258,7 +261,6 @@ func (t *TileCoder) String() string {
 func (t *TileCoder) VecLength() int {
 	baseVec := 0
 	for i := 0; i < t.NumTilings(); i++ {
-		// baseVec += prod(t.bins[i])
 		baseVec += t.tilings[i].Tiles()
 	}
 	if t.includeBias {
@@ -287,7 +289,6 @@ func prod(i []int) int {
 func (t *TileCoder) featuresBeforeTiling(i int) int {
 	features := 0
 	for j := 0; j < i; j++ {
-		// features += prod(t.bins[j])
 		features += t.tilings[j].Tiles()
 	}
 	return features
@@ -330,7 +331,6 @@ func (t *TileCoder) encodeBatchWithTiling(b *mat.Dense,
 
 	// Offset the 1.0 based on which tiling was used for the previous
 	// iteration of coding and if a bias unit was used
-	// A vector of 1.0's will be needed for calculations later
 	rows, _ := b.Dims()
 	ones := matutils.VecOnes(rows)
 	index.AddScaledVec(index, float64(indexOffset)+bias, ones)

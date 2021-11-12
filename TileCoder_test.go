@@ -13,6 +13,7 @@ func BenchmarkTileCoder(b *testing.B) {
 		[][]int{{8, 8, 8, 8, 8, 8, 8, 8}},
 		12,
 		true,
+		-1.0,
 	)
 
 	y := mat.NewVecDense(8, []float64{0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5})
